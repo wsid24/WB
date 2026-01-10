@@ -23,27 +23,15 @@ const authenticate = (req, res, next) => {
 
         next();
     } catch (error) {
-        if(error.name === 'TokenExpiredError') {
-            const refreshToken = req.headers['Refresh-Token'];
+        if(error instanceof jwt.TokenExpiredError) {
+            const refreshToken = req.headers['refresh-token'];
+            console.log('Token expired. Refresh Token:', refreshToken);
             if(refreshToken){
                 try {
                     const decodedRefresh = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
                     console.log('Decoded Refresh Token:', decodedRefresh);
-                    // Generate new tokens
-                    const newToken = jwt.sign(
-                        { email: decodedRefresh.email },
-                        process.env.JWT_SECRET,
-                        { expiresIn: '10s' }
-                    );
-                    const newRefreshToken = jwt.sign(
-                        { email: decodedRefresh.email },
-                        process.env.JWT_REFRESH_SECRET,
-                        { expiresIn: '30s' }
-                    );
-
-                    // Set new tokens in response headers
-                    res.setHeader('Authorization', `Bearer ${newToken}`);
-                    res.setHeader('Refresh-Token', newRefreshToken);
+                    res.status(302).json({ message: 'Token expired, please refresh', email: decodedRefresh.email });
+                    return;
                 } catch (err) {
                     console.error('Refresh Token error:', err);
                     return res.status(401).json({ error: 'Refresh token invalid or expired' });

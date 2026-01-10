@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { refreshTokenMethod } from '../utils/refreshtoken';
 
 function Canvases() {
   const [canvases, setCanvases] = useState([]);
@@ -36,7 +37,21 @@ function Canvases() {
                 navigate('/login');
                 return;
             }
-            throw new Error(data.error || 'Failed to fetch canvases');
+            else if(response.status === 302){
+              if (!refreshToken) {
+                  // No refresh token; force login
+                  navigate('/login');
+                  return;
+              }
+                var statuscode = await refreshTokenMethod();
+                if(statuscode === 401){
+                    navigate('/login');
+                    return;
+                }
+                window.location.reload();
+                return;
+            }
+            throw new Error('Failed to fetch canvases');
         }
         const data = await response.json();
 
@@ -57,23 +72,64 @@ function Canvases() {
     setCreating(true);
     setError('');
 
-    const token = localStorage.getItem('token');
+    var token = localStorage.getItem('token');
+    var refreshToken = localStorage.getItem('refreshToken');  
+    
+    if (!token) {
+      navigate('/login');
+      return;
+    }
 
     try {
-      const response = await fetch('http://localhost:3030/api/canvas', {
+      var response = await fetch('http://localhost:3030/api/canvas', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'Refresh-Token': refreshToken
         },
         body: JSON.stringify({ name: canvasName || 'Untitled Canvas' }),
       });
 
-      const data = await response.json();
+      var data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create canvas');
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
+        }
+        if(response.status === 302){
+          if (!refreshToken) {
+              // No refresh token; force login
+              navigate('/login');
+              return;
+          }
+          var statuscode = await refreshTokenMethod();
+          if(statuscode === 401){
+              navigate('/login');
+              return;
+          }
+        }
       }
+
+      token = await localStorage.getItem('token');
+      refreshToken = await localStorage.getItem('refreshToken');
+
+      console.log('token after refresh:', token);
+      console.log('refreshToken after refresh:', refreshToken);
+
+      response = await fetch('http://localhost:3030/api/canvas', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Refresh-Token': refreshToken
+        },
+        body: JSON.stringify({ name: canvasName || 'Untitled Canvas' }),
+      });
+
+      data = await response.json();
 
       setCanvases([...canvases, data]);
       setShowCreateModal(false);
@@ -87,6 +143,7 @@ function Canvases() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     navigate('/login');
   };
 

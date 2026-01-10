@@ -38,6 +38,24 @@ const loginUser = async (req, res) => {
     }
 };
 
+const refreshTokens = (req, res) => {
+    // it is a post req with body containing token and refresh token
+    try {
+        const { token, refreshToken } = req.body;
+        const decodedRefresh = jsonwebtoken.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const user = { email: decodedRefresh.email };
+        const { token: newToken, refreshToken: newRefreshToken } = newTokens(user);
+        console.log('Refreshed Token:', newToken);
+        console.log('Refreshed Refresh Token:', newRefreshToken);
+        res.status(200).json({
+            token: newToken,
+            refreshToken: newRefreshToken
+        });
+    } catch (error) {
+        res.status(401).json({ error: error.message });
+    }   
+}
+
 const newTokens = (user) => {
     // generate new token and refresh token
     const newToken = jsonwebtoken.sign(
@@ -48,7 +66,7 @@ const newTokens = (user) => {
     const newRefreshToken = jsonwebtoken.sign(
         { email: user.email },
         process.env.JWT_REFRESH_SECRET,
-        { expiresIn: '30s' }
+        { expiresIn: '60s' }
     );
 
     return { token: newToken, refreshToken: newRefreshToken };
@@ -74,5 +92,6 @@ const getUserProfile = async (req, res) => {
 module.exports = {
     registerUser,
     loginUser,
-    getUserProfile
+    getUserProfile,
+    refreshTokens
 };
