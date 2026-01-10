@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { refreshTokenMethod } from '../utils/refreshtoken';
 
 function Canvas() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ function Canvas() {
   useEffect(() => {
     const fetchCanvas = async () => {
       const token = localStorage.getItem('token');
+      const refreshToken = localStorage.getItem('refreshToken');
       if (!token) {
         navigate('/login');
         return;
@@ -22,6 +24,7 @@ function Canvas() {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
+            'Refresh-Token': refreshToken
           },
         });
 
@@ -31,6 +34,20 @@ function Canvas() {
           if (response.status === 401) {
             localStorage.removeItem('token');
             navigate('/login');
+            return;
+          }
+          else if(response.status === 302){
+            if (!refreshToken) {
+                // No refresh token; force login
+                navigate('/login');
+                return;
+            }
+            var statuscode = await refreshTokenMethod();
+            if(statuscode === 401){
+                navigate('/login');
+                return;
+            }
+            window.location.reload();
             return;
           }
           throw new Error(data.error || 'Failed to load canvas');
