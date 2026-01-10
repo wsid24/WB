@@ -34,9 +34,14 @@ canvasSchema.statics.getAllCanvases = async function(email) {
         }
         const canvases = await this.find(
             { $or: [ { owner: user._id }, { sharedWith: user._id } ] },
-            { _id: 1, name: 1, createdAt: 1, updatedAt: 1, modifiedAt: 1 }
+            { _id: 1, name: 1, createdAt: 1, updatedAt: 1, modifiedAt: 1, elements: 1, sharedWith: 1 }
         );
-        return canvases;
+        // Add elements count to each canvas
+        const canvasesWithCount = canvases.map(canvas => ({
+            ...canvas.toObject(),
+            elements: canvas.elements || []
+        }));
+        return canvasesWithCount;
     } catch (error) {
         throw error;
     }   
@@ -143,6 +148,42 @@ canvasSchema.statics.loadCanvas = async function(email, canvasId) {
         
         if (!isOwner && !isShared) {
             throw new Error('You do not have permission to access this canvas');
+        }
+        
+        return canvas;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// write static method to share a canvas with another user by email (only owner can share)
+canvasSchema.statics.shareCanvas = async function(email, canvasId, shareWithEmail) {
+    try {
+        const user = await mongoose.model('User').findOne({ email });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        
+        const canvas = await this.findById(canvasId);   
+        if (!canvas) {
+            throw new Error('Canvas not found');
+        }
+        
+        // Check if user is owner
+        const isOwner = canvas.owner.toString() === user._id.toString();
+        if (!isOwner) {
+            throw new Error('Only the owner can share this canvas');
+        }
+        
+        const shareWithUser = await mongoose.model('User').findOne({ email: shareWithEmail });
+        if (!shareWithUser) {
+            throw new Error('User to share with not found');
+        }
+        
+        // Add to sharedWith array if not already present
+        if (!canvas.sharedWith.some(id => id.toString() === shareWithUser._id.toString())) {
+            canvas.sharedWith.push(shareWithUser._id);
+            await canvas.save();
         }
         
         return canvas;

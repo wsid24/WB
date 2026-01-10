@@ -43,9 +43,15 @@ export const createElement = (
       const brushElement = {
         id,
         points: [{ x: x1, y: y1 }],
-        path: new Path2D(getSvgPathFromStroke(getStroke([{ x: x1, y: y1 }]))),
+        path: new Path2D(getSvgPathFromStroke(getStroke([{ x: x1, y: y1 }], {
+          size: size || 2,
+          thinning: 0.5,
+          smoothing: 0.5,
+          streamline: 0.5,
+        }))),
         type,
         stroke,
+        size: size || 2,
       };
       return brushElement;
     }
@@ -149,4 +155,54 @@ export const getSvgPathFromStroke = (stroke) => {
 
   d.push("Z");
   return d.join(" ");
+};
+
+// Serialize elements for saving (remove non-serializable objects)
+export const serializeElements = (elements) => {
+  return elements.map(element => {
+    const serialized = { ...element };
+    // Remove non-serializable properties
+    delete serialized.roughEle;
+    delete serialized.path;
+    return serialized;
+  });
+};
+
+// Deserialize elements when loading (reconstruct roughEle and path)
+export const deserializeElements = (elements) => {
+  if (!elements || !Array.isArray(elements)) return [];
+  
+  return elements.map(element => {
+    const { id, x1, y1, x2, y2, type, stroke, fill, size, points, text } = element;
+    
+    // Reconstruct the element with roughEle or path
+    switch (type) {
+      case TOOL_ITEMS.BRUSH:
+        if (points && points.length > 0) {
+          return {
+            ...element,
+            path: new Path2D(getSvgPathFromStroke(getStroke(points, {
+              size: size || 2,
+              thinning: 0.5,
+              smoothing: 0.5,
+              streamline: 0.5,
+            })))
+          };
+        }
+        return element;
+      
+      case TOOL_ITEMS.LINE:
+      case TOOL_ITEMS.RECTANGLE:
+      case TOOL_ITEMS.CIRCLE:
+      case TOOL_ITEMS.ARROW:
+        // Recreate the element to get roughEle
+        return createElement(id, x1, y1, x2, y2, { type, stroke, fill, size });
+      
+      case TOOL_ITEMS.TEXT:
+        return { ...element };
+      
+      default:
+        return element;
+    }
+  });
 };

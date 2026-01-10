@@ -1,17 +1,49 @@
 .container {
-  @apply absolute left-1/2 top-5 px-3 py-2 flex rounded border border-gray-400;
+  @apply absolute left-1/2 px-4 py-3 flex rounded-xl;
+  top: 75px;
   transform: translateX(-50%);
-  box-shadow: 1px 0 10px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  z-index: 998;
+}
+
+body.dark-mode .container {
+  background: rgba(45, 45, 45, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .toolItem {
-  @apply flex justify-center items-center text-xl p-3 text-black mr-5 last:mr-0 cursor-pointer;
+  @apply flex justify-center items-center text-xl p-3 mr-3 last:mr-0 cursor-pointer rounded-lg;
+  color: #4b5563;
+  transition: all 0.2s ease;
+}
+
+body.dark-mode .toolItem {
+  color: #9ca3af;
 }
 
 .toolItem:hover {
-  @apply bg-blue-50 text-gray-700 rounded;
+  background-color: #f3f4f6;
+  color: #1f2937;
+  transform: translateY(-2px);
+}
+
+body.dark-mode .toolItem:hover {
+  background-color: #3f3f46;
+  color: #e5e7eb;
 }
 
 .toolItem.active {
-  @apply bg-blue-200 text-gray-700 rounded;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+body.dark-mode .toolItem.active {
+  background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
 }

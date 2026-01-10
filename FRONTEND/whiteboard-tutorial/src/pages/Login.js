@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import themeContext from '../store/theme-context';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { isDarkMode, toggleTheme } = useContext(themeContext);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -30,7 +32,6 @@ function Login() {
 
       // Store the JWT token in localStorage
       localStorage.setItem('token', data.token);
-      localStorage.setItem('refreshToken', data.refreshToken);
       
       // Navigate to canvases page
       navigate('/canvases');
@@ -42,48 +43,141 @@ function Login() {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px' }}>
-      <h2>Login</h2>
-      <form onSubmit={handleLogin}>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-          />
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Password:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-          />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button 
-          type="submit" 
-          disabled={loading}
-          style={{ 
-            width: '100%', 
-            padding: '10px', 
-            backgroundColor: '#007bff', 
-            color: 'white', 
-            border: 'none', 
-            cursor: 'pointer' 
-          }}
-        >
-          {loading ? 'Logging in...' : 'Login'}
+    <div style={{ 
+      minHeight: '100vh',
+      backgroundColor: isDarkMode ? '#1a1a1a' : '#f8f9fa',
+      transition: 'background-color 0.3s ease',
+      padding: '30px'
+    }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'flex-end',
+        marginBottom: '20px'
+      }}>
+        <button onClick={toggleTheme} style={{
+          padding: '10px 16px',
+          backgroundColor: isDarkMode ? '#6366f1' : '#4f46e5',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '18px',
+          fontWeight: '600',
+          transition: 'all 0.2s ease',
+          boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
+        }} title="Toggle theme">
+          {isDarkMode ? '☀️' : '🌙'}
         </button>
-      </form>
-      <p style={{ marginTop: '15px' }}>
-        Don't have an account? <a href="/register">Register here</a>
-      </p>
+      </div>
+      <div style={{ 
+        maxWidth: '450px', 
+        margin: '0 auto', 
+        padding: '40px',
+        backgroundColor: isDarkMode ? '#2d2d2d' : '#ffffff',
+        borderRadius: '12px',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+        border: `1px solid ${isDarkMode ? '#4a4a4a' : '#e5e7eb'}`
+      }}>
+        <h2 style={{
+          fontSize: '32px',
+          fontWeight: '800',
+          marginBottom: '30px',
+          color: isDarkMode ? '#e5e5e5' : '#1a1a1a',
+          textAlign: 'center'
+        }}>Login</h2>
+        <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px',
+              fontWeight: '600',
+              color: isDarkMode ? '#e5e5e5' : '#1a1a1a'
+            }}>Email:</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{ 
+                width: '100%', 
+                padding: '12px',
+                boxSizing: 'border-box',
+                borderRadius: '8px',
+                border: `2px solid ${isDarkMode ? '#4a4a4a' : '#e5e7eb'}`,
+                backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+                color: isDarkMode ? '#e5e5e5' : '#1a1a1a',
+                fontSize: '14px',
+                transition: 'border-color 0.2s ease'
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px',
+              fontWeight: '600',
+              color: isDarkMode ? '#e5e5e5' : '#1a1a1a'
+            }}>Password:</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ 
+                width: '100%', 
+                padding: '12px',
+                boxSizing: 'border-box',
+                borderRadius: '8px',
+                border: `2px solid ${isDarkMode ? '#4a4a4a' : '#e5e7eb'}`,
+                backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+                color: isDarkMode ? '#e5e5e5' : '#1a1a1a',
+                fontSize: '14px',
+                transition: 'border-color 0.2s ease'
+              }}
+            />
+          </div>
+          {error && <p style={{ 
+            color: '#ef4444',
+            backgroundColor: isDarkMode ? '#3d1a1a' : '#fee2e2',
+            padding: '12px',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            fontSize: '14px'
+          }}>{error}</p>}
+          <button 
+            type="submit" 
+            disabled={loading}
+            style={{ 
+              width: '100%', 
+              padding: '14px',
+              backgroundColor: isDarkMode ? '#6366f1' : '#4f46e5',
+              color: 'white', 
+              border: 'none', 
+              cursor: loading ? 'not-allowed' : 'pointer',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: '700',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
+              opacity: loading ? 0.6 : 1
+            }}
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+        <p style={{ 
+          marginTop: '20px',
+          textAlign: 'center',
+          color: isDarkMode ? '#9ca3af' : '#6b7280',
+          fontSize: '14px'
+        }}>
+          Don't have an account? <a href="/register" style={{
+            color: isDarkMode ? '#818cf8' : '#4f46e5',
+            textDecoration: 'none',
+            fontWeight: '600'
+          }}>Register here</a>
+        </p>
+      </div>
     </div>
   );
 }

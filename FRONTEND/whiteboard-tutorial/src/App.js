@@ -40,19 +40,22 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Canvases from './pages/Canvases';
 import Canvas from './pages/Canvas';
+import ThemeProvider from './store/ThemeProvider';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Navigate to="/canvases" />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/canvases" element={<Canvases />} />
-        <Route path="/canvas/:id" element={<Canvas />} />
-      </Routes>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Navigate to="/canvases" />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/canvases" element={<Canvases />} />
+          <Route path="/canvas/:id" element={<Canvas />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 

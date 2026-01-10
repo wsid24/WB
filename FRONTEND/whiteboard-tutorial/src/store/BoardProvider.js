@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer } from "react";
+import React, { useCallback, useReducer, useEffect } from "react";
 
 import boardContext from "./board-context";
 import { BOARD_ACTIONS, TOOL_ACTION_TYPES, TOOL_ITEMS } from "../constants";
@@ -6,11 +6,23 @@ import {
   createElement,
   getSvgPathFromStroke,
   isPointNearElement,
+  deserializeElements,
+  serializeElements,
 } from "../utils/element";
 import getStroke from "perfect-freehand";
 
 const boardReducer = (state, action) => {
   switch (action.type) {
+    case BOARD_ACTIONS.LOAD_ELEMENTS: {
+      // Deserialize elements to reconstruct roughEle and path objects
+      const deserializedElements = deserializeElements(action.payload.elements);
+      return {
+        ...state,
+        elements: deserializedElements,
+        history: [deserializedElements],
+        index: 0,
+      };
+    }
     case BOARD_ACTIONS.CHANGE_TOOL: {
       return {
         ...state,
@@ -70,7 +82,12 @@ const boardReducer = (state, action) => {
             { x: clientX, y: clientY },
           ];
           newElements[index].path = new Path2D(
-            getSvgPathFromStroke(getStroke(newElements[index].points))
+            getSvgPathFromStroke(getStroke(newElements[index].points, {
+              size: newElements[index].size || 2,
+              thinning: 0.5,
+              smoothing: 0.5,
+              streamline: 0.5,
+            }))
           );
           return {
             ...state,
@@ -82,8 +99,9 @@ const boardReducer = (state, action) => {
     }
     case BOARD_ACTIONS.DRAW_UP: {
       const elementsCopy = [...state.elements];
+      const serializedCopy = serializeElements(elementsCopy);
       const newHistory = state.history.slice(0, state.index + 1);
-      newHistory.push(elementsCopy);
+      newHistory.push(serializedCopy);
       return {
         ...state,
         history: newHistory,
@@ -96,11 +114,17 @@ const boardReducer = (state, action) => {
       newElements = newElements.filter((element) => {
         return !isPointNearElement(element, clientX, clientY);
       });
-      const newHistory = state.history.slice(0, state.index + 1);
-      newHistory.push(newElements);
       return {
         ...state,
         elements: newElements,
+      };
+    }
+    case BOARD_ACTIONS.ERASE_COMPLETE: {
+      const serializedElements = serializeElements(state.elements);
+      const newHistory = state.history.slice(0, state.index + 1);
+      newHistory.push(serializedElements);
+      return {
+        ...state,
         history: newHistory,
         index: state.index + 1,
       };
@@ -109,8 +133,9 @@ const boardReducer = (state, action) => {
       const index = state.elements.length - 1;
       const newElements = [...state.elements];
       newElements[index].text = action.payload.text;
+      const serializedElements = serializeElements(newElements);
       const newHistory = state.history.slice(0, state.index + 1);
-      newHistory.push(newElements);
+      newHistory.push(serializedElements);
       return {
         ...state,
         toolActionType: TOOL_ACTION_TYPES.NONE,
@@ -121,17 +146,19 @@ const boardReducer = (state, action) => {
     }
     case BOARD_ACTIONS.UNDO: {
       if (state.index <= 0) return state;
+      const restoredElements = deserializeElements(state.history[state.index - 1]);
       return {
         ...state,
-        elements: state.history[state.index - 1],
+        elements: restoredElements,
         index: state.index - 1,
       };
     }
     case BOARD_ACTIONS.REDO: {
       if (state.index >= state.history.length - 1) return state;
+      const restoredElements = deserializeElements(state.history[state.index + 1]);
       return {
         ...state,
-        elements: state.history[state.index + 1],
+        elements: restoredElements,
         index: state.index + 1,
       };
     }
@@ -148,11 +175,23 @@ const initialBoardState = {
   index: 0,
 };
 
-const BoardProvider = ({ children }) => {
+const BoardProvider = ({ children, initialElements }) => {
   const [boardState, dispatchBoardAction] = useReducer(
     boardReducer,
     initialBoardState
   );
+
+  // Load initial elements when provided
+  useEffect(() => {
+    if (initialElements && initialElements.length > 0) {
+      dispatchBoardAction({
+        type: BOARD_ACTIONS.LOAD_ELEMENTS,
+        payload: {
+          elements: initialElements,
+        },
+      });
+    }
+  }, [initialElements]);
 
   const changeToolHandler = (tool) => {
     dispatchBoardAction({
@@ -215,6 +254,10 @@ const BoardProvider = ({ children }) => {
       dispatchBoardAction({
         type: BOARD_ACTIONS.DRAW_UP,
       });
+    } else if (boardState.toolActionType === TOOL_ACTION_TYPES.ERASING) {
+      dispatchBoardAction({
+        type: BOARD_ACTIONS.ERASE_COMPLETE,
+      });
     }
     dispatchBoardAction({
       type: BOARD_ACTIONS.CHANGE_ACTION_TYPE,
@@ -222,6 +265,11 @@ const BoardProvider = ({ children }) => {
         actionType: TOOL_ACTION_TYPES.NONE,
       },
     });
+
+    // Dispatch custom event to trigger save
+    window.dispatchEvent(new CustomEvent('canvasUpdated', {
+      detail: { elements: boardState.elements }
+    }));
   };
 
   const textAreaBlurHandler = (text) => {
@@ -231,6 +279,11 @@ const BoardProvider = ({ children }) => {
         text,
       },
     });
+
+    // Dispatch custom event to trigger save after text change
+    window.dispatchEvent(new CustomEvent('canvasUpdated', {
+      detail: { elements: boardState.elements }
+    }));
   };
 
   const boardUndoHandler = useCallback(() => {
@@ -245,6 +298,15 @@ const BoardProvider = ({ children }) => {
     });
   }, []);
 
+  const loadElements = useCallback((elements) => {
+    dispatchBoardAction({
+      type: BOARD_ACTIONS.LOAD_ELEMENTS,
+      payload: {
+        elements,
+      },
+    });
+  }, []);
+
   const boardContextValue = {
     activeToolItem: boardState.activeToolItem,
     elements: boardState.elements,
@@ -256,6 +318,7 @@ const BoardProvider = ({ children }) => {
     textAreaBlurHandler,
     undo: boardUndoHandler,
     redo: boardRedoHandler,
+    loadElements,
   };
 
   return (

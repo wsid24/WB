@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAllCanvases, createCanvas, updateCanvas, deleteCanvas, loadCanvas } = require('../controllers/canvasController');
+const { getAllCanvases, createCanvas, updateCanvas, deleteCanvas, loadCanvas, shareCanvas } = require('../controllers/canvasController');
 const authenticate = require('../middleware/auth');
 const router = express.Router();
 
@@ -16,5 +16,7 @@ router.put('/:canvasId', authenticate, updateCanvas);
 router.delete('/:canvasId', authenticate, deleteCanvas);
 
 router.get('/:canvasId', authenticate, loadCanvas);
+
+router.put('/share/:canvasId', authenticate, shareCanvas);
 
 module.exports = router;   

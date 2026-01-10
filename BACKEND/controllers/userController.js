@@ -19,16 +19,13 @@ const loginUser = async (req, res) => {
         const { email, password } = req.body;
         const user = await userModel.login(email, password);
         if (user) {
-            const {token, refreshToken} = newTokens(user);
-            console.log('Generated Token:', token);
-            console.log('Generated Refresh Token:', refreshToken);
-            console.log('JWT_SECRET:', process.env.JWT_SECRET);
-            console.log('JWT_REFRESH_SECRET:', process.env.JWT_REFRESH_SECRET);
+            const token = newToken(user);
+            // console.log('Generated Token:', token);
+            // console.log('JWT_SECRET:', process.env.JWT_SECRET);
 
             res.status(200).json({
                 message: 'Login successful',
-                token,
-                refreshToken
+                token
             });
         } else {
             res.status(401).json({ error: 'Invalid credentials' });
@@ -38,20 +35,15 @@ const loginUser = async (req, res) => {
     }
 };
 
-const newTokens = (user) => {
-    // generate new token and refresh token
-    const newToken = jsonwebtoken.sign(
+const newToken = (user) => {
+    // generate new token
+    const token = jsonwebtoken.sign(
         { email: user.email },
         process.env.JWT_SECRET,
-        { expiresIn: '10s' }
-    );
-    const newRefreshToken = jsonwebtoken.sign(
-        { email: user.email },
-        process.env.JWT_REFRESH_SECRET,
-        { expiresIn: '30s' }
+        { expiresIn: '24h' }
     );
 
-    return { token: newToken, refreshToken: newRefreshToken };
+    return token;
 }
 
 // get user profile 

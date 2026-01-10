@@ -23,15 +23,26 @@ function Board() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+    };
   }, []);
 
   useEffect(() => {
     function handleKeyDown(event) {
-      if (event.ctrlKey && event.key === "z") {
+      if ((event.ctrlKey || event.metaKey) && event.key === "z") {
+        event.preventDefault();
         undo();
-      } else if (event.ctrlKey && event.key === "y") {
+      } else if ((event.ctrlKey || event.metaKey) && event.key === "y") {
+        event.preventDefault();
         redo();
       }
     }

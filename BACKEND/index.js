@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const userRoutes = require('./routes/userRoutes');
 // const postRoutes = require('./routes/postRoutes');
 const canvasRoutes = require('./routes/canvasRoutes');
@@ -7,6 +9,13 @@ const cors = require('cors')();
 const connecttoDB = require('./db');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+  }
+});
+
 connecttoDB();
 
 app.use(cors);
@@ -16,6 +25,29 @@ app.use('/users', userRoutes);
 // app.use('/api/posts', postRoutes);
 app.use('/api/canvas', canvasRoutes);
 
-app.listen(3030, () => {
-  console.log('Server is running on port 3030');
+// WebSocket handlers
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  socket.on('joinCanvas', (canvasId) => {
+    socket.join(canvasId);
+    console.log(`User ${socket.id} joined canvas: ${canvasId}`);
+  });
+
+  socket.on('canvasUpdate', ({ canvasId, elements }) => {
+    socket.to(canvasId).emit('canvasUpdate', { elements });
+  });
+
+  socket.on('leaveCanvas', (canvasId) => {
+    socket.leave(canvasId);
+    console.log(`User ${socket.id} left canvas: ${canvasId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
+server.listen(3030, () => {
+  console.log('Server is running on port 3030 with WebSocket support');
 });
