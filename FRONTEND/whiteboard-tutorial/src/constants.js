@@ -27,6 +27,7 @@ export const BOARD_ACTIONS = {
   UNDO: "UNDO",
   REDO: "REDO",
   LOAD_ELEMENTS: "LOAD_ELEMENTS",
+  CLEAR_ALL: "CLEAR_ALL",
 };
 
 export const COLORS = {

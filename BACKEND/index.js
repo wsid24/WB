@@ -5,7 +5,7 @@ const { Server } = require('socket.io');
 const userRoutes = require('./routes/userRoutes');
 // const postRoutes = require('./routes/postRoutes');
 const canvasRoutes = require('./routes/canvasRoutes');
-const cors = require('cors')();
+const cors = require('cors');
 const connecttoDB = require('./db');
 
 const app = express();
@@ -13,12 +13,17 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
 connecttoDB();
 
-app.use(cors);
+app.use(cors({
+  origin: '*',
+  credentials: true
+}));
 app.use(express.json());
 
 app.use('/users', userRoutes);
@@ -35,6 +40,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('canvasUpdate', ({ canvasId, elements }) => {
+    console.log(`📤 Broadcasting update for canvas ${canvasId} from ${socket.id}`);
     socket.to(canvasId).emit('canvasUpdate', { elements });
   });
 

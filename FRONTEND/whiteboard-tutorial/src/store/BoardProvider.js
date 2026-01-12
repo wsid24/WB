@@ -21,6 +21,7 @@ const boardReducer = (state, action) => {
         elements: deserializedElements,
         history: [deserializedElements],
         index: 0,
+        toolActionType: TOOL_ACTION_TYPES.NONE, // Reset drawing state
       };
     }
     case BOARD_ACTIONS.CHANGE_TOOL: {
@@ -159,6 +160,16 @@ const boardReducer = (state, action) => {
       return {
         ...state,
         elements: restoredElements,
+        index: state.index + 1,
+      };
+    }
+    case BOARD_ACTIONS.CLEAR_ALL: {
+      const newHistory = state.history.slice(0, state.index + 1);
+      newHistory.push([]);
+      return {
+        ...state,
+        elements: [],
+        history: newHistory,
         index: state.index + 1,
       };
     }
@@ -307,6 +318,12 @@ const BoardProvider = ({ children, initialElements }) => {
     });
   }, []);
 
+  const clearAll = useCallback(() => {
+    dispatchBoardAction({
+      type: BOARD_ACTIONS.CLEAR_ALL,
+    });
+  }, []);
+
   const boardContextValue = {
     activeToolItem: boardState.activeToolItem,
     elements: boardState.elements,
@@ -319,6 +336,7 @@ const BoardProvider = ({ children, initialElements }) => {
     undo: boardUndoHandler,
     redo: boardRedoHandler,
     loadElements,
+    clearAll,
   };
 
   return (

@@ -20,11 +20,12 @@ import {
   FaRedoAlt,
   FaFont,
   FaDownload,
+  FaTrash,
 } from "react-icons/fa";
 import { LuRectangleHorizontal } from "react-icons/lu";
 
 function CanvasContent({ canvasId, canvasName }) {
-  const { elements, activeToolItem, changeToolHandler, undo, redo, loadElements } = useContext(boardContext);
+  const { elements, activeToolItem, changeToolHandler, undo, redo, loadElements, clearAll } = useContext(boardContext);
   const { isDarkMode, toggleTheme } = useContext(themeContext);
   const navigate = useNavigate();
   const [saveStatus, setSaveStatus] = useState('saved');
@@ -34,18 +35,27 @@ function CanvasContent({ canvasId, canvasName }) {
 
   // Initialize socket connection
   useEffect(() => {
+    console.log('🔌 Connecting to:', API_URL);
     socketRef.current = io(API_URL);
 
     socketRef.current.on('connect', () => {
-      console.log('Connected to WebSocket');
+      console.log('✅ Connected! Socket ID:', socketRef.current.id);
+      console.log('📍 Joining canvas:', canvasId);
       socketRef.current.emit('joinCanvas', canvasId);
     });
 
+    socketRef.current.on('connect_error', (error) => {
+      console.error('❌ Connection error:', error.message);
+    });
+
     socketRef.current.on('canvasUpdate', ({ elements: remoteElements }) => {
-      console.log('Received canvas update from another user');
+      console.log('📥 Received update from another user');
       isRemoteUpdateRef.current = true;
       const deserializedElements = deserializeElements(remoteElements);
       loadElements(deserializedElements);
+      
+      // Reset any active drawing state to prevent errors
+      window.dispatchEvent(new CustomEvent('resetDrawingState'));
     });
 
     return () => {
@@ -64,6 +74,56 @@ function CanvasContent({ canvasId, canvasName }) {
     anchor.download = `${canvasName || 'board'}.png`;
     anchor.click();
   };
+
+  const handleClearAll = useCallback(async () => {
+    if (!window.confirm('Are you sure you want to clear the entire canvas? This cannot be undone.')) {
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      console.log('🗑️ Clearing canvas');
+      clearAll();
+
+      // Broadcast clear to other users
+      if (socketRef.current && socketRef.current.connected) {
+        console.log('📤 Broadcasting clear to other users');
+        socketRef.current.emit('canvasUpdate', {
+          canvasId,
+          elements: []
+        });
+      }
+
+      // Save empty canvas to database
+      const response = await fetch(`${API_URL}/api/canvas/${canvasId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ elements: [] }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
+        }
+        throw new Error('Failed to clear canvas');
+      }
+
+      console.log('✅ Canvas cleared successfully');
+    } catch (error) {
+      console.error('Error clearing canvas:', error);
+      alert('Failed to clear canvas. Please try again.');
+    }
+  }, [canvasId, navigate, clearAll]);
 
   // Save function to be called on draw complete
   const saveCanvas = useCallback(async (elementsToSave) => {
@@ -86,10 +146,13 @@ function CanvasContent({ canvasId, canvasName }) {
       
       // Emit to other users in real-time
       if (socketRef.current && socketRef.current.connected) {
+        console.log('📤 Broadcasting update to canvas:', canvasId);
         socketRef.current.emit('canvasUpdate', {
           canvasId,
           elements: serializedElements
         });
+      } else {
+        console.warn('⚠️ Socket not connected, cannot broadcast');
       }
 
       // Save to database
@@ -233,6 +296,14 @@ function CanvasContent({ canvasId, canvasName }) {
               onClick={handleDownloadClick}
             >
               <FaDownload />
+            </div>
+            <div style={{...styles.separator, backgroundColor: isDarkMode ? '#4b5563' : '#e5e7eb'}} />
+            <div
+              style={{...styles.toolItem, color: '#ef4444'}}
+              onClick={handleClearAll}
+              title="Clear All"
+            >
+              <FaTrash />
             </div>
           </div>
         </div>
