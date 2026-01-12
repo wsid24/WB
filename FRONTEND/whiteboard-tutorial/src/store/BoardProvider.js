@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer, useEffect } from "react";
+import React, { useCallback, useReducer, useEffect, useRef } from "react";
 
 import boardContext from "./board-context";
 import { BOARD_ACTIONS, TOOL_ACTION_TYPES, TOOL_ITEMS } from "../constants";
@@ -191,6 +191,8 @@ const BoardProvider = ({ children, initialElements }) => {
     boardReducer,
     initialBoardState
   );
+  const previousIndexRef = useRef(0);
+  const previousActionTypeRef = useRef(TOOL_ACTION_TYPES.NONE);
 
   // Load initial elements when provided
   useEffect(() => {
@@ -203,6 +205,26 @@ const BoardProvider = ({ children, initialElements }) => {
       });
     }
   }, [initialElements]);
+
+  // Emit canvas update event when a draw/erase action completes (history index changes)
+  useEffect(() => {
+    const indexChanged = boardState.index !== previousIndexRef.current;
+    const actionBecameNone = previousActionTypeRef.current !== TOOL_ACTION_TYPES.NONE && 
+                             boardState.toolActionType === TOOL_ACTION_TYPES.NONE;
+    
+    // Emit event when: 
+    // 1. History index changed (drawing/erasing completed)
+    // 2. Action type became NONE (drawing/erasing ended)
+    // 3. Not during initial load (index > 0)
+    if (indexChanged && actionBecameNone && boardState.index > 0) {
+      window.dispatchEvent(new CustomEvent('canvasUpdated', {
+        detail: { elements: boardState.elements }
+      }));
+    }
+    
+    previousIndexRef.current = boardState.index;
+    previousActionTypeRef.current = boardState.toolActionType;
+  }, [boardState.index, boardState.toolActionType, boardState.elements]);
 
   const changeToolHandler = (tool) => {
     dispatchBoardAction({
@@ -276,11 +298,6 @@ const BoardProvider = ({ children, initialElements }) => {
         actionType: TOOL_ACTION_TYPES.NONE,
       },
     });
-
-    // Dispatch custom event to trigger save
-    window.dispatchEvent(new CustomEvent('canvasUpdated', {
-      detail: { elements: boardState.elements }
-    }));
   };
 
   const textAreaBlurHandler = (text) => {
@@ -290,11 +307,6 @@ const BoardProvider = ({ children, initialElements }) => {
         text,
       },
     });
-
-    // Dispatch custom event to trigger save after text change
-    window.dispatchEvent(new CustomEvent('canvasUpdated', {
-      detail: { elements: boardState.elements }
-    }));
   };
 
   const boardUndoHandler = useCallback(() => {
