@@ -1,6 +1,7 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import themeContext from '../store/theme-context';
+import { API_URL } from '../config';
 
 function Register() {
   const [name, setName] = useState('');
@@ -17,7 +18,7 @@ function Register() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3030/users/register', {
+      const response = await fetch(`${API_URL}/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

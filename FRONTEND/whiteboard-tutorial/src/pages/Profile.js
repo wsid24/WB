@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import themeContext from '../store/theme-context';
+import { API_URL } from '../config';
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -19,7 +20,7 @@ function Profile() {
       }
 
       try {
-        const response = await fetch('http://localhost:3030/users/profile', {
+        const response = await fetch(`${API_URL}/users/profile`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

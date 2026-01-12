@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef, useContext, useCallback } from 'react';
 import { io } from 'socket.io-client';
+import { API_URL } from '../config';
 import Board from '../components/Board';
 import Toolbox from '../components/Toolbox';
 import BoardProvider from '../store/BoardProvider';
@@ -33,7 +34,7 @@ function CanvasContent({ canvasId, canvasName }) {
 
   // Initialize socket connection
   useEffect(() => {
-    socketRef.current = io('http://localhost:3030');
+    socketRef.current = io(API_URL);
 
     socketRef.current.on('connect', () => {
       console.log('Connected to WebSocket');
@@ -92,7 +93,7 @@ function CanvasContent({ canvasId, canvasName }) {
       }
 
       // Save to database
-      const response = await fetch(`http://localhost:3030/api/canvas/${canvasId}`, {
+      const response = await fetch(`${API_URL}/api/canvas/${canvasId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -270,7 +271,7 @@ function Canvas() {
       }
 
       try {
-        const response = await fetch(`http://localhost:3030/api/canvas/${id}`, {
+        const response = await fetch(`${API_URL}/api/canvas/${id}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -48,6 +48,8 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(3030, () => {
-  console.log('Server is running on port 3030 with WebSocket support');
+const PORT = process.env.PORT || 3030;
+
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT} with WebSocket support`);
 });

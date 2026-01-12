@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import themeContext from '../store/theme-context';
+import { API_URL } from '../config';
 
 function Canvases() {
   const [canvases, setCanvases] = useState([]);
@@ -26,7 +27,7 @@ function Canvases() {
     }
 
     try {
-        const response = await fetch('http://localhost:3030/api/canvas', {
+        const response = await fetch(`${API_URL}/api/canvas`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -66,7 +67,7 @@ function Canvases() {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch('http://localhost:3030/api/canvas', {
+      const response = await fetch(`${API_URL}/api/canvas`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -106,7 +107,7 @@ function Canvases() {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`http://localhost:3030/api/canvas/share/${sharingCanvasId}`, {
+      const response = await fetch(`${API_URL}/api/canvas/share/${sharingCanvasId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
