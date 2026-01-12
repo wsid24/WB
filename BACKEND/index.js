@@ -55,7 +55,7 @@ io.on('connection', (socket) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('Backend is running successfully!');
+  res.status(200).send('Server is live');
 });
 
 const PORT = process.env.PORT || 3030;
