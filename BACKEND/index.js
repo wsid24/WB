@@ -54,6 +54,10 @@ io.on('connection', (socket) => {
   });
 });
 
+app.get('/', (req, res) => {
+  res.send('Backend is running successfully!');
+});
+
 const PORT = process.env.PORT || 3030;
 
 server.listen(PORT, () => {
