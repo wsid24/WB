@@ -3,12 +3,12 @@ import rough from "roughjs";
 import boardContext from "../../store/board-context";
 import { TOOL_ACTION_TYPES, TOOL_ITEMS } from "../../constants";
 import toolboxContext from "../../store/toolbox-context";
-
-import classes from "./index.module.css";
+import themeContext from "../../store/theme-context";
 
 function Board() {
   const canvasRef = useRef();
   const textAreaRef = useRef();
+  const { isDarkMode } = useContext(themeContext);
   const {
     elements,
     toolActionType,
@@ -27,10 +27,10 @@ function Board() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-    
+
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-    
+
     return () => {
       window.removeEventListener('resize', resizeCanvas);
     };
@@ -118,7 +118,7 @@ function Board() {
         <textarea
           type="text"
           ref={textAreaRef}
-          className={classes.textElementBox}
+          className={`fixed border-none bg-transparent resize-none outline-none p-0 m-0 w-auto h-auto overflow-hidden font-[inherit] text-[inherit] leading-[inherit] font-caveat z-40 ${isDarkMode ? 'text-white' : 'text-black'}`}
           style={{
             top: elements[elements.length - 1].y1,
             left: elements[elements.length - 1].x1,
@@ -131,6 +131,7 @@ function Board() {
       <canvas
         ref={canvasRef}
         id="canvas"
+        className={`block fixed top-0 left-0 w-full h-full touch-none z-10 ${isDarkMode ? 'bg-black' : 'bg-slate-50'}`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

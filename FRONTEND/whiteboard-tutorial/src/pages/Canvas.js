@@ -53,7 +53,7 @@ function CanvasContent({ canvasId, canvasName }) {
       isRemoteUpdateRef.current = true;
       const deserializedElements = deserializeElements(remoteElements);
       loadElements(deserializedElements);
-      
+
       // Reset any active drawing state to prevent errors
       window.dispatchEvent(new CustomEvent('resetDrawingState'));
     });
@@ -143,7 +143,7 @@ function CanvasContent({ canvasId, canvasName }) {
 
     try {
       const serializedElements = serializeElements(elementsToSave);
-      
+
       // Emit to other users in real-time
       if (socketRef.current && socketRef.current.connected) {
         console.log('📤 Broadcasting update to canvas:', canvasId);
@@ -196,130 +196,125 @@ function CanvasContent({ canvasId, canvasName }) {
   }, [saveCanvas]);
 
   return (
-    <div style={styles.container}>
-      <div style={{...styles.topBar, backgroundColor: isDarkMode ? 'rgba(45, 45, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)'}}>
-        <div style={styles.leftSection}>
-          <button onClick={() => navigate('/canvases')} style={{...styles.backBtn, backgroundColor: isDarkMode ? '#6366f1' : '#4f46e5'}}>
-            ← Back
+    <div className="relative w-full h-screen overflow-hidden">
+      {/* Top Bar / Toolbar */}
+      <div className={`absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 backdrop-blur-md border-b shadow-sm transition-all duration-300
+        ${isDarkMode ? 'bg-[#1a1a1a]/95 border-gray-800' : 'bg-white/95 border-gray-200'}
+      `}>
+        {/* Left Section (Back & Title) */}
+        <div className="flex items-center gap-4 min-w-[200px]">
+          <button
+            onClick={() => navigate('/canvases')}
+            className={`px-4 py-2 rounded-lg font-bold transition-all shadow-sm flex items-center gap-2
+              ${isDarkMode ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}
+            `}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back
           </button>
-          <h1 style={{...styles.title, color: isDarkMode ? '#e5e5e5' : '#1a1a1a'}}>{canvasName || 'Canvas Editor'}</h1>
-        </div>
-        
-        <div style={styles.toolbarSection}>
-          <div style={styles.toolsContainer}>
-            <div
-              style={{
-                ...styles.toolItem,
-                ...(activeToolItem === TOOL_ITEMS.BRUSH ? styles.toolItemActive : {}),
-                backgroundColor: activeToolItem === TOOL_ITEMS.BRUSH ? (isDarkMode ? '#6366f1' : '#4f46e5') : 'transparent',
-                color: activeToolItem === TOOL_ITEMS.BRUSH ? '#ffffff' : (isDarkMode ? '#9ca3af' : '#4b5563')
-              }}
-              onClick={() => changeToolHandler(TOOL_ITEMS.BRUSH)}
-            >
-              <FaPaintBrush />
-            </div>
-            <div
-              style={{
-                ...styles.toolItem,
-                backgroundColor: activeToolItem === TOOL_ITEMS.LINE ? (isDarkMode ? '#6366f1' : '#4f46e5') : 'transparent',
-                color: activeToolItem === TOOL_ITEMS.LINE ? '#ffffff' : (isDarkMode ? '#9ca3af' : '#4b5563')
-              }}
-              onClick={() => changeToolHandler(TOOL_ITEMS.LINE)}
-            >
-              <FaSlash />
-            </div>
-            <div
-              style={{
-                ...styles.toolItem,
-                backgroundColor: activeToolItem === TOOL_ITEMS.RECTANGLE ? (isDarkMode ? '#6366f1' : '#4f46e5') : 'transparent',
-                color: activeToolItem === TOOL_ITEMS.RECTANGLE ? '#ffffff' : (isDarkMode ? '#9ca3af' : '#4b5563')
-              }}
-              onClick={() => changeToolHandler(TOOL_ITEMS.RECTANGLE)}
-            >
-              <LuRectangleHorizontal />
-            </div>
-            <div
-              style={{
-                ...styles.toolItem,
-                backgroundColor: activeToolItem === TOOL_ITEMS.CIRCLE ? (isDarkMode ? '#6366f1' : '#4f46e5') : 'transparent',
-                color: activeToolItem === TOOL_ITEMS.CIRCLE ? '#ffffff' : (isDarkMode ? '#9ca3af' : '#4b5563')
-              }}
-              onClick={() => changeToolHandler(TOOL_ITEMS.CIRCLE)}
-            >
-              <FaRegCircle />
-            </div>
-            <div
-              style={{
-                ...styles.toolItem,
-                backgroundColor: activeToolItem === TOOL_ITEMS.ARROW ? (isDarkMode ? '#6366f1' : '#4f46e5') : 'transparent',
-                color: activeToolItem === TOOL_ITEMS.ARROW ? '#ffffff' : (isDarkMode ? '#9ca3af' : '#4b5563')
-              }}
-              onClick={() => changeToolHandler(TOOL_ITEMS.ARROW)}
-            >
-              <FaArrowRight />
-            </div>
-            <div
-              style={{
-                ...styles.toolItem,
-                backgroundColor: activeToolItem === TOOL_ITEMS.ERASER ? (isDarkMode ? '#6366f1' : '#4f46e5') : 'transparent',
-                color: activeToolItem === TOOL_ITEMS.ERASER ? '#ffffff' : (isDarkMode ? '#9ca3af' : '#4b5563')
-              }}
-              onClick={() => changeToolHandler(TOOL_ITEMS.ERASER)}
-            >
-              <FaEraser />
-            </div>
-            <div
-              style={{
-                ...styles.toolItem,
-                backgroundColor: activeToolItem === TOOL_ITEMS.TEXT ? (isDarkMode ? '#6366f1' : '#4f46e5') : 'transparent',
-                color: activeToolItem === TOOL_ITEMS.TEXT ? '#ffffff' : (isDarkMode ? '#9ca3af' : '#4b5563')
-              }}
-              onClick={() => changeToolHandler(TOOL_ITEMS.TEXT)}
-            >
-              <FaFont />
-            </div>
-            <div style={{...styles.separator, backgroundColor: isDarkMode ? '#4b5563' : '#e5e7eb'}} />
-            <div
-              style={{...styles.toolItem, color: isDarkMode ? '#9ca3af' : '#4b5563'}}
-              onClick={undo}
-            >
-              <FaUndoAlt />
-            </div>
-            <div
-              style={{...styles.toolItem, color: isDarkMode ? '#9ca3af' : '#4b5563'}}
-              onClick={redo}
-            >
-              <FaRedoAlt />
-            </div>
-            <div
-              style={{...styles.toolItem, color: isDarkMode ? '#9ca3af' : '#4b5563'}}
-              onClick={handleDownloadClick}
-            >
-              <FaDownload />
-            </div>
-            <div style={{...styles.separator, backgroundColor: isDarkMode ? '#4b5563' : '#e5e7eb'}} />
-            <div
-              style={{...styles.toolItem, color: '#ef4444'}}
-              onClick={handleClearAll}
-              title="Clear All"
-            >
-              <FaTrash />
-            </div>
+          <div className="hidden sm:block">
+            <h1 className={`text-lg font-bold truncate max-w-[250px] ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+              {canvasName || 'Canvas Editor'}
+            </h1>
           </div>
         </div>
 
-        <div style={styles.rightSection}>
-          <span style={{
-            ...styles.saveStatus,
-            color: saveStatus === 'error saving' ? '#ef4444' : (isDarkMode ? '#10b981' : '#059669')
-          }}>
-            {saveStatus}
+        {/* Center Toolbar Section */}
+        <div className="flex-1 flex justify-center overflow-x-auto no-scrollbar">
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border shadow-sm
+            ${isDarkMode ? 'bg-[#2d2d2d]/80 border-gray-700' : 'bg-gray-50/80 border-gray-200'}
+          `}>
+            {/* Drawing Tools */}
+            {[
+              { id: TOOL_ITEMS.BRUSH, icon: <FaPaintBrush />, title: "Brush" },
+              { id: TOOL_ITEMS.LINE, icon: <FaSlash />, title: "Line" },
+              { id: TOOL_ITEMS.RECTANGLE, icon: <LuRectangleHorizontal />, title: "Rectangle" },
+              { id: TOOL_ITEMS.CIRCLE, icon: <FaRegCircle />, title: "Circle" },
+              { id: TOOL_ITEMS.ARROW, icon: <FaArrowRight />, title: "Arrow" },
+              { id: TOOL_ITEMS.ERASER, icon: <FaEraser />, title: "Eraser" },
+              { id: TOOL_ITEMS.TEXT, icon: <FaFont />, title: "Text" }
+            ].map((tool) => (
+              <button
+                key={tool.id}
+                title={tool.title}
+                onClick={() => changeToolHandler(tool.id)}
+                className={`w-10 h-10 flex items-center justify-center rounded-lg text-lg transition-all duration-200
+                  ${activeToolItem === tool.id
+                    ? (isDarkMode ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30')
+                    : (isDarkMode ? 'text-gray-400 hover:bg-gray-700 hover:text-white' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-900')
+                  }
+                `}
+              >
+                {tool.icon}
+              </button>
+            ))}
+
+            {/* Separator */}
+            <div className={`w-px h-6 mx-1 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
+
+            {/* Actions */}
+            <button
+              onClick={undo}
+              title="Undo"
+              className={`w-10 h-10 flex items-center justify-center rounded-lg text-lg transition-all
+                ${isDarkMode ? 'text-gray-400 hover:bg-gray-700 hover:text-white' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-900'}
+              `}
+            >
+              <FaUndoAlt />
+            </button>
+            <button
+              onClick={redo}
+              title="Redo"
+              className={`w-10 h-10 flex items-center justify-center rounded-lg text-lg transition-all
+                ${isDarkMode ? 'text-gray-400 hover:bg-gray-700 hover:text-white' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-900'}
+              `}
+            >
+              <FaRedoAlt />
+            </button>
+            <button
+              onClick={handleDownloadClick}
+              title="Download as PNG"
+              className={`w-10 h-10 flex items-center justify-center rounded-lg text-lg transition-all
+                ${isDarkMode ? 'text-gray-400 hover:bg-gray-700 hover:text-indigo-400' : 'text-gray-500 hover:bg-gray-200 hover:text-indigo-600'}
+              `}
+            >
+              <FaDownload />
+            </button>
+
+            {/* Separator */}
+            <div className={`w-px h-6 mx-1 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
+
+            <button
+              onClick={handleClearAll}
+              title="Clear Board"
+              className={`w-10 h-10 flex items-center justify-center rounded-lg text-lg transition-all text-red-500
+                ${isDarkMode ? 'hover:bg-red-900/30 hover:text-red-400' : 'hover:bg-red-50 hover:text-red-600'}
+              `}
+            >
+              <FaTrash />
+            </button>
+          </div>
+        </div>
+
+        {/* Right Section (Status & Theme) */}
+        <div className="flex items-center justify-end gap-4 min-w-[200px]">
+          <span className={`text-sm font-medium italic hidden md:block
+            ${saveStatus === 'error saving' ? 'text-red-500' : (isDarkMode ? 'text-emerald-400' : 'text-emerald-600')}
+          `}>
+            {saveStatus === 'error saving' ? 'Error saving' : saveStatus}
           </span>
-          <button onClick={toggleTheme} style={{...styles.themeBtn, backgroundColor: isDarkMode ? '#6366f1' : '#4f46e5'}} title="Toggle theme">
+          <button
+            onClick={toggleTheme}
+            className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors shadow-sm
+              ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40' : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'}
+            `}
+            title="Toggle theme"
+          >
             {isDarkMode ? '☀️' : '🌙'}
           </button>
         </div>
       </div>
+
       <Board />
       <Toolbox />
     </div>
@@ -332,6 +327,7 @@ function Canvas() {
   const [canvas, setCanvas] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { isDarkMode } = useContext(themeContext);
 
   useEffect(() => {
     const fetchCanvas = async () => {
@@ -373,16 +369,35 @@ function Canvas() {
   }, [id, navigate]);
 
   if (loading) {
-    return <div style={styles.loading}>Loading canvas...</div>;
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-[#1a1a1a] text-gray-300' : 'bg-gray-50 text-gray-600'}`}>
+        <div className="flex flex-col items-center space-y-4">
+          <svg className={`animate-spin h-10 w-10 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-lg font-medium">Loading canvas content...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div style={styles.container}>
-        <button onClick={() => navigate('/canvases')} style={styles.backBtn}>
-          ← Back to Canvases
-        </button>
-        <div style={styles.error}>{error}</div>
+      <div className={`min-h-screen w-full flex flex-col items-center justify-center p-6 ${isDarkMode ? 'bg-[#1a1a1a]' : 'bg-gray-50'}`}>
+        <div className={`max-w-md w-full p-8 rounded-2xl shadow-xl text-center border ${isDarkMode ? 'bg-[#2d2d2d] border-red-900/50' : 'bg-white border-red-100'}`}>
+          <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-6 ${isDarkMode ? 'bg-red-900/30 text-red-500' : 'bg-red-100 text-red-600'}`}>
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </div>
+          <h2 className={`text-2xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Failed to load canvas</h2>
+          <p className={`mb-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{error}</p>
+          <button
+            onClick={() => navigate('/canvases')}
+            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md flex justify-center items-center gap-2"
+          >
+            ← Back to Canvases
+          </button>
+        </div>
       </div>
     );
   }
@@ -396,132 +411,6 @@ function Canvas() {
   );
 }
 
-const styles = {
-  container: {
-    position: 'relative',
-    width: '100%',
-    height: '100vh',
-  },
-  topBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 999,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '12px 24px',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
-    backdropFilter: 'blur(10px)',
-    transition: 'all 0.3s ease',
-    gap: '24px',
-  },
-  leftSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-    minWidth: '200px',
-  },
-  toolbarSection: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  toolsContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '6px 12px',
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-    borderRadius: '10px',
-  },
-  rightSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    minWidth: '200px',
-    justifyContent: 'flex-end',
-  },
-  backBtn: {
-    padding: '10px 18px',
-    backgroundColor: '#4f46e5',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-    boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
-    whiteSpace: 'nowrap',
-  },
-  title: {
-    margin: 0,
-    fontSize: '18px',
-    fontWeight: '700',
-    color: '#1a1a1a',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    maxWidth: '250px',
-  },
-  toolItem: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '40px',
-    height: '40px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '18px',
-    transition: 'all 0.2s ease',
-  },
-  toolItemActive: {
-    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)',
-  },
-  separator: {
-    width: '1px',
-    height: '24px',
-    backgroundColor: '#e5e7eb',
-    margin: '0 4px',
-  },
-  saveStatus: {
-    fontSize: '13px',
-    fontStyle: 'italic',
-    fontWeight: '500',
-    whiteSpace: 'nowrap',
-  },
-  themeBtn: {
-    padding: '8px 12px',
-    backgroundColor: '#4f46e5',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '18px',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: '44px',
-    height: '44px',
-  },
-  loading: {
-    textAlign: 'center',
-    marginTop: '50px',
-    fontSize: '18px',
-    color: 'var(--text-secondary)',
-  },
-  error: {
-    color: '#ef4444',
-    backgroundColor: '#fee2e2',
-    padding: '20px',
-    borderRadius: '8px',
-    marginTop: '20px',
-  },
-};
+
 
 export default Canvas;
