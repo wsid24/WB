@@ -161,6 +161,15 @@ function Board() {
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
     context.save();
+
+    // Paint the theme background so the canvas's pixel buffer is opaque.
+    // This is what makes downloads and shared snapshots come out with the
+    // correct white-in-light / black-in-dark background instead of transparent
+    // pixels (which most viewers render as black, esp. JPG).
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.fillStyle = isDarkMode ? "#000000" : "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
     context.setTransform(view.scale, 0, 0, view.scale, view.panX, view.panY);
 
     const roughCanvas = rough.canvas(canvas);

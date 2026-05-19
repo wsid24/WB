@@ -70,18 +70,11 @@ function CanvasContent({ canvasId, canvasName }) {
     };
   }, [canvasId, loadElements]);
 
-  // Compose the current canvas onto a themed background so exports match the
-  // current Slate theme (white background in light mode, black in dark mode).
+  // The canvas already paints its theme background each render, so exports
+  // include the correct light/dark background automatically.
   const exportCanvasAsDataUrl = (mime, quality) => {
     const canvas = document.getElementById("canvas");
-    const off = document.createElement('canvas');
-    off.width = canvas.width;
-    off.height = canvas.height;
-    const ctx = off.getContext('2d');
-    ctx.fillStyle = isDarkMode ? '#000000' : '#ffffff';
-    ctx.fillRect(0, 0, off.width, off.height);
-    ctx.drawImage(canvas, 0, 0);
-    return quality !== undefined ? off.toDataURL(mime, quality) : off.toDataURL(mime);
+    return quality !== undefined ? canvas.toDataURL(mime, quality) : canvas.toDataURL(mime);
   };
 
   const handleDownloadClick = () => {
