@@ -4,30 +4,68 @@ import boardContext from "./board-context";
 import { BOARD_ACTIONS, TOOL_ACTION_TYPES, TOOL_ITEMS } from "../constants";
 import {
   createElement,
+  createImageElement,
   getSvgPathFromStroke,
   isPointNearElement,
   deserializeElements,
   serializeElements,
+  moveElement,
 } from "../utils/element";
 import getStroke from "perfect-freehand";
 
 const boardReducer = (state, action) => {
   switch (action.type) {
     case BOARD_ACTIONS.LOAD_ELEMENTS: {
-      // Deserialize elements to reconstruct roughEle and path objects
       const deserializedElements = deserializeElements(action.payload.elements);
       return {
         ...state,
         elements: deserializedElements,
         history: [deserializedElements],
         index: 0,
-        toolActionType: TOOL_ACTION_TYPES.NONE, // Reset drawing state
+        toolActionType: TOOL_ACTION_TYPES.NONE,
+        selectedElementIds: [],
+      };
+    }
+    case BOARD_ACTIONS.SELECT_ELEMENT: {
+      const ids = action.payload.ids ?? (action.payload.id == null ? [] : [action.payload.id]);
+      return { ...state, selectedElementIds: ids };
+    }
+    case BOARD_ACTIONS.MOVE_ELEMENT: {
+      const { ids, dx, dy } = action.payload;
+      const idSet = new Set(ids);
+      const newElements = state.elements.map((el) =>
+        idSet.has(el.id) ? moveElement(el, dx, dy) : el
+      );
+      return { ...state, elements: newElements };
+    }
+    case BOARD_ACTIONS.MOVE_COMPLETE: {
+      const serializedCopy = serializeElements(state.elements);
+      const newHistory = state.history.slice(0, state.index + 1);
+      newHistory.push(serializedCopy);
+      return { ...state, history: newHistory, index: state.index + 1 };
+    }
+    case BOARD_ACTIONS.DELETE_SELECTED: {
+      if (!state.selectedElementIds || state.selectedElementIds.length === 0) return state;
+      const idSet = new Set(state.selectedElementIds);
+      const newElements = state.elements.filter((el) => !idSet.has(el.id));
+      if (newElements.length === state.elements.length) return state;
+      const serializedCopy = serializeElements(newElements);
+      const newHistory = state.history.slice(0, state.index + 1);
+      newHistory.push(serializedCopy);
+      return {
+        ...state,
+        elements: newElements,
+        selectedElementIds: [],
+        history: newHistory,
+        index: state.index + 1,
       };
     }
     case BOARD_ACTIONS.CHANGE_TOOL: {
+      const nextTool = action.payload.tool;
       return {
         ...state,
-        activeToolItem: action.payload.tool,
+        activeToolItem: nextTool,
+        selectedElementIds: nextTool === TOOL_ITEMS.SELECT ? state.selectedElementIds : [],
       };
     }
     case BOARD_ACTIONS.CHANGE_ACTION_TYPE:
@@ -85,9 +123,9 @@ const boardReducer = (state, action) => {
           newElements[index].path = new Path2D(
             getSvgPathFromStroke(getStroke(newElements[index].points, {
               size: newElements[index].size || 2,
-              thinning: 0.5,
-              smoothing: 0.5,
-              streamline: 0.5,
+              thinning: 0.6,
+              smoothing: 0.7,
+              streamline: 0.55,
             }))
           );
           return {
@@ -163,6 +201,29 @@ const boardReducer = (state, action) => {
         index: state.index + 1,
       };
     }
+    case BOARD_ACTIONS.ADD_IMAGE: {
+      const { src, naturalWidth, naturalHeight, x, y } = action.payload;
+      const maxW = window.innerWidth * 0.5;
+      const maxH = window.innerHeight * 0.5;
+      let w = naturalWidth;
+      let h = naturalHeight;
+      const ratio = Math.min(maxW / w, maxH / h, 1);
+      w = w * ratio;
+      h = h * ratio;
+      const cx = (x ?? window.innerWidth / 2) - w / 2;
+      const cy = (y ?? window.innerHeight / 2) - h / 2;
+      const newEl = createImageElement(state.elements.length, cx, cy, src, w, h);
+      const newElements = [...state.elements, newEl];
+      const serializedCopy = serializeElements(newElements);
+      const newHistory = state.history.slice(0, state.index + 1);
+      newHistory.push(serializedCopy);
+      return {
+        ...state,
+        elements: newElements,
+        history: newHistory,
+        index: state.index + 1,
+      };
+    }
     case BOARD_ACTIONS.CLEAR_ALL: {
       const newHistory = state.history.slice(0, state.index + 1);
       newHistory.push([]);
@@ -171,6 +232,7 @@ const boardReducer = (state, action) => {
         elements: [],
         history: newHistory,
         index: state.index + 1,
+        selectedElementIds: [],
       };
     }
     default:
@@ -184,6 +246,7 @@ const initialBoardState = {
   elements: [],
   history: [[]],
   index: 0,
+  selectedElementIds: [],
 };
 
 const BoardProvider = ({ children, initialElements }) => {
@@ -237,6 +300,9 @@ const BoardProvider = ({ children, initialElements }) => {
 
   const boardMouseDownHandler = (event, toolboxState) => {
     if (boardState.toolActionType === TOOL_ACTION_TYPES.WRITING) return;
+    if (boardState.activeToolItem === TOOL_ITEMS.IMAGE) return;
+    if (boardState.activeToolItem === TOOL_ITEMS.HAND) return;
+    if (boardState.activeToolItem === TOOL_ITEMS.SELECT) return;
     const { clientX, clientY } = event;
     if (boardState.activeToolItem === TOOL_ITEMS.ERASER) {
       dispatchBoardAction({
@@ -336,6 +402,31 @@ const BoardProvider = ({ children, initialElements }) => {
     });
   }, []);
 
+  const addImage = useCallback((src, naturalWidth, naturalHeight, x, y) => {
+    dispatchBoardAction({
+      type: BOARD_ACTIONS.ADD_IMAGE,
+      payload: { src, naturalWidth, naturalHeight, x, y },
+    });
+  }, []);
+
+  const selectElements = useCallback((ids) => {
+    const arr = ids == null ? [] : Array.isArray(ids) ? ids : [ids];
+    dispatchBoardAction({ type: BOARD_ACTIONS.SELECT_ELEMENT, payload: { ids: arr } });
+  }, []);
+
+  const moveSelectedBy = useCallback((ids, dx, dy) => {
+    const arr = Array.isArray(ids) ? ids : [ids];
+    dispatchBoardAction({ type: BOARD_ACTIONS.MOVE_ELEMENT, payload: { ids: arr, dx, dy } });
+  }, []);
+
+  const finishMove = useCallback(() => {
+    dispatchBoardAction({ type: BOARD_ACTIONS.MOVE_COMPLETE });
+  }, []);
+
+  const deleteSelected = useCallback(() => {
+    dispatchBoardAction({ type: BOARD_ACTIONS.DELETE_SELECTED });
+  }, []);
+
   const boardContextValue = {
     activeToolItem: boardState.activeToolItem,
     elements: boardState.elements,
@@ -349,6 +440,12 @@ const BoardProvider = ({ children, initialElements }) => {
     redo: boardRedoHandler,
     loadElements,
     clearAll,
+    addImage,
+    selectedElementIds: boardState.selectedElementIds,
+    selectElements,
+    moveSelectedBy,
+    finishMove,
+    deleteSelected,
   };
 
   return (

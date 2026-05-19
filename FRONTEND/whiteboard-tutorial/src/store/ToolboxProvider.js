@@ -51,6 +51,9 @@ const initialToolboxState = {
     stroke: COLORS.BLACK,
     size: 32,
   },
+  [TOOL_ITEMS.IMAGE]: {},
+  [TOOL_ITEMS.HAND]: {},
+  [TOOL_ITEMS.SELECT]: {},
 };
 
 const ToolboxProvider = ({ children }) => {

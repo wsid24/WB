@@ -1,7 +1,10 @@
 const express = require('express');
-const { getAllCanvases, createCanvas, updateCanvas, deleteCanvas, loadCanvas, shareCanvas } = require('../controllers/canvasController');
+const { getAllCanvases, createCanvas, updateCanvas, deleteCanvas, loadCanvas, shareCanvas, getPublicImage } = require('../controllers/canvasController');
 const authenticate = require('../middleware/auth');
 const router = express.Router();
+
+// Public: serve snapshot as image (no auth) — must be before generic /:canvasId
+router.get('/public/:canvasId/image', getPublicImage);
 
 // Get all canvases for a user (protected)
 router.get('/', authenticate, getAllCanvases);

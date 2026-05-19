@@ -13,6 +13,9 @@ const canvasSchema = new mongoose.Schema({
     elements: {
         type: mongoose.Schema.Types.Mixed,
     },
+    snapshot: {
+        type: String,
+    },
     sharedWith: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -91,6 +94,7 @@ canvasSchema.statics.updateCanvas = async function(email, canvasId, updateData) 
         // Update allowed fields
         if (updateData.name) canvas.name = updateData.name;
         if (updateData.elements !== undefined) canvas.elements = updateData.elements;
+        if (updateData.snapshot !== undefined) canvas.snapshot = updateData.snapshot;
         if (updateData.sharedWith !== undefined && isOwner) {
             canvas.sharedWith = updateData.sharedWith;
         }

@@ -75,11 +75,30 @@ const shareCanvas = async (req, res) => {
     }
 };
 
+// Public endpoint: returns the stored snapshot as a JPG image (no auth)
+const getPublicImage = async (req, res) => {
+    try {
+        const canvas = await canvasModel.findById(req.params.canvasId);
+        if (!canvas || !canvas.snapshot) {
+            return res.status(404).send('No snapshot available');
+        }
+        const match = canvas.snapshot.match(/^data:(image\/\w+);base64,(.+)$/);
+        if (!match) return res.status(400).send('Invalid snapshot data');
+        const buffer = Buffer.from(match[2], 'base64');
+        res.setHeader('Content-Type', match[1]);
+        res.setHeader('Cache-Control', 'no-cache');
+        res.send(buffer);
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+};
+
 module.exports = {
     getAllCanvases,
     createCanvas,
     updateCanvas,
     deleteCanvas,
     loadCanvas,
-    shareCanvas
+    shareCanvas,
+    getPublicImage,
 };

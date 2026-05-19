@@ -28,8 +28,8 @@ const Toolbox = () => {
 
   return (
     <Draggable nodeRef={nodeRef} handle=".drag-handle" bounds="parent">
-      <div ref={nodeRef} className={`absolute left-6 top-24 z-[60] flex flex-col gap-5 p-5 pt-3 rounded-2xl shadow-2xl border backdrop-blur-xl w-64 max-h-[85vh] overflow-y-auto no-scrollbar
-        ${isDarkMode ? 'bg-[#1e1e1e]/95 border-gray-700 shadow-black/50' : 'bg-white/95 border-gray-200 shadow-indigo-500/15'}
+      <div ref={nodeRef} className={`absolute left-24 top-24 z-[60] flex flex-col gap-5 p-5 pt-3 rounded-2xl shadow-2xl border backdrop-blur-xl w-64 max-h-[85vh] overflow-y-auto no-scrollbar
+        ${isDarkMode ? 'bg-[#0a0a0a]/95 border-white/10 shadow-black/60' : 'bg-white/95 border-black/10 shadow-black/10'}
       `}>
         {/* Drag Handle */}
         <div
@@ -63,7 +63,7 @@ const Toolbox = () => {
                     key={k}
                     className={`w-8 h-8 rounded-full cursor-pointer transition-all duration-200 border-2
                     ${strokeColor === COLORS[k]
-                        ? (isDarkMode ? 'border-indigo-400 scale-110 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'border-indigo-600 scale-110 shadow-[0_0_10px_rgba(79,70,229,0.3)]')
+                        ? (isDarkMode ? 'border-white scale-110 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'border-black scale-110 shadow-[0_0_10px_rgba(0,0,0,0.3)]')
                         : (isDarkMode ? 'border-transparent hover:scale-110' : 'border-transparent hover:scale-110 shadow-sm')
                       }
                   `}
@@ -106,7 +106,7 @@ const Toolbox = () => {
               <div
                 className={`w-8 h-8 rounded-full cursor-pointer transition-all duration-200 border-2 relative overflow-hidden
                 ${fillColor === null
-                    ? (isDarkMode ? 'border-indigo-400 scale-110 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'border-indigo-600 scale-110 shadow-[0_0_10px_rgba(79,70,229,0.3)]')
+                    ? (isDarkMode ? 'border-white scale-110 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'border-black scale-110 shadow-[0_0_10px_rgba(0,0,0,0.3)]')
                     : (isDarkMode ? 'border-gray-700 hover:scale-110' : 'border-gray-200 hover:scale-110')
                   }
               `}
@@ -121,7 +121,7 @@ const Toolbox = () => {
                     key={k}
                     className={`w-8 h-8 rounded-full cursor-pointer transition-all duration-200 border-2
                     ${fillColor === COLORS[k]
-                        ? (isDarkMode ? 'border-indigo-400 scale-110 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'border-indigo-600 scale-110 shadow-[0_0_10px_rgba(79,70,229,0.3)]')
+                        ? (isDarkMode ? 'border-white scale-110 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'border-black scale-110 shadow-[0_0_10px_rgba(0,0,0,0.3)]')
                         : (isDarkMode ? 'border-transparent hover:scale-110' : 'border-transparent hover:scale-110 shadow-sm')
                       }
                   `}
@@ -139,7 +139,7 @@ const Toolbox = () => {
               <span className={`text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 {activeToolItem === TOOL_ITEMS.TEXT ? "Font Size" : "Brush Size"}
               </span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-white/10 text-white' : 'bg-black/5 text-black'}`}>
                 {size}
               </span>
             </div>
@@ -151,7 +151,7 @@ const Toolbox = () => {
               value={size}
               onChange={(event) => changeSize(activeToolItem, event.target.value)}
               className={`w-full h-2 rounded-lg appearance-none cursor-pointer outline-none transition-colors
-              ${isDarkMode ? 'bg-gray-700 accent-indigo-500' : 'bg-gray-200 accent-indigo-600'}
+              ${isDarkMode ? 'bg-white/10 accent-white' : 'bg-black/10 accent-black'}
             `}
             ></input>
           </div>

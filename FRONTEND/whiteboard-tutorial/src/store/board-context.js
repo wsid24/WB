@@ -11,6 +11,12 @@ const boardContext = createContext({
   boardMouseMoveHandler: () => {},
   boardMouseUpHandler: () => {},
   clearAll: () => {},
+  addImage: () => {},
+  selectedElementIds: [],
+  selectElements: () => {},
+  moveSelectedBy: () => {},
+  finishMove: () => {},
+  deleteSelected: () => {},
 });
 
 export default boardContext;

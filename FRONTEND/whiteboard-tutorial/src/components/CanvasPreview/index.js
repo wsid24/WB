@@ -1,12 +1,15 @@
-import React, { useEffect, useRef, useContext } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import rough from 'roughjs/bin/rough';
 import { TOOL_ITEMS } from '../../constants';
 import themeContext from '../../store/theme-context';
 import { deserializeElements } from '../../utils/element';
 
+const previewImageCache = new Map();
+
 const CanvasPreview = ({ elements }) => {
     const canvasRef = useRef(null);
     const { isDarkMode } = useContext(themeContext);
+    const [, setTick] = useState(0);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -57,6 +60,19 @@ const CanvasPreview = ({ elements }) => {
                         }
                         context.fillText(element.text, element.x1, element.y1);
                         break;
+                    case TOOL_ITEMS.IMAGE: {
+                        let img = previewImageCache.get(element.src);
+                        if (!img) {
+                            img = new Image();
+                            img.onload = () => setTick((t) => t + 1);
+                            img.src = element.src;
+                            previewImageCache.set(element.src, img);
+                        }
+                        if (img.complete && img.naturalWidth > 0) {
+                            context.drawImage(img, element.x1, element.y1, element.x2 - element.x1, element.y2 - element.y1);
+                        }
+                        break;
+                    }
                     default:
                         break;
                 }
@@ -71,7 +87,7 @@ const CanvasPreview = ({ elements }) => {
     if (!elements || elements.length === 0) {
         return (
             <div className="w-full h-full flex items-center justify-center">
-                <svg className={`w-10 h-10 opacity-20 ${isDarkMode ? 'text-neutral-500' : 'text-indigo-300'}`} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <svg className={`w-8 h-8 ${isDarkMode ? 'text-white/15' : 'text-black/15'}`} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"></path>
                 </svg>
             </div>
