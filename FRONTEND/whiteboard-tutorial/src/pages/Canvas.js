@@ -70,9 +70,22 @@ function CanvasContent({ canvasId, canvasName }) {
     };
   }, [canvasId, loadElements]);
 
-  const handleDownloadClick = () => {
+  // Compose the current canvas onto a themed background so exports match the
+  // current Slate theme (white background in light mode, black in dark mode).
+  const exportCanvasAsDataUrl = (mime, quality) => {
     const canvas = document.getElementById("canvas");
-    const data = canvas.toDataURL("image/png");
+    const off = document.createElement('canvas');
+    off.width = canvas.width;
+    off.height = canvas.height;
+    const ctx = off.getContext('2d');
+    ctx.fillStyle = isDarkMode ? '#000000' : '#ffffff';
+    ctx.fillRect(0, 0, off.width, off.height);
+    ctx.drawImage(canvas, 0, 0);
+    return quality !== undefined ? off.toDataURL(mime, quality) : off.toDataURL(mime);
+  };
+
+  const handleDownloadClick = () => {
+    const data = exportCanvasAsDataUrl('image/png');
     const anchor = document.createElement("a");
     anchor.href = data;
     anchor.download = `${canvasName || 'board'}.png`;
@@ -103,8 +116,7 @@ function CanvasContent({ canvasId, canvasName }) {
     }
     setGeneratingShare(true);
     try {
-      const canvas = document.getElementById('canvas');
-      const snapshot = canvas.toDataURL('image/jpeg', 0.85);
+      const snapshot = exportCanvasAsDataUrl('image/jpeg', 0.9);
       const response = await fetch(`${API_URL}/api/canvas/${canvasId}`, {
         method: 'PUT',
         headers: {
