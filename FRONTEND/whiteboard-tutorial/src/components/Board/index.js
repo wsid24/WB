@@ -95,7 +95,7 @@ function Board() {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
     };
-  }, [undo, redo, deleteSelected, selectElement, selectedElementId]);
+  }, [undo, redo, deleteSelected, selectElements, hasSelection]);
 
   useEffect(() => {
     const handlePaste = (event) => {
@@ -208,23 +208,37 @@ function Board() {
       }
     });
 
-    // Draw selection box (after elements, before restore)
-    if (selectedElementId !== null && selectedElementId !== undefined) {
-      const sel = elements.find((e) => e.id === selectedElementId);
-      if (sel) {
-        const bb = getElementBoundingBox(sel);
-        if (bb) {
-          const pad = 6 / view.scale;
-          const dash = 6 / view.scale;
-          const gap = 4 / view.scale;
-          context.save();
-          context.strokeStyle = isDarkMode ? "#ffffff" : "#000000";
-          context.lineWidth = 1.4 / view.scale;
-          context.setLineDash([dash, gap]);
-          context.strokeRect(bb.x - pad, bb.y - pad, bb.w + pad * 2, bb.h + pad * 2);
-          context.restore();
-        }
+    // Draw selection outlines around each selected element
+    if (selectedElementIds && selectedElementIds.length > 0) {
+      const selSet = new Set(selectedElementIds);
+      const pad = 6 / view.scale;
+      const dash = 6 / view.scale;
+      const gap = 4 / view.scale;
+      context.save();
+      context.strokeStyle = isDarkMode ? "#ffffff" : "#000000";
+      context.lineWidth = 1.4 / view.scale;
+      context.setLineDash([dash, gap]);
+      for (const el of elements) {
+        if (!selSet.has(el.id)) continue;
+        const bb = getElementBoundingBox(el);
+        if (!bb) continue;
+        context.strokeRect(bb.x - pad, bb.y - pad, bb.w + pad * 2, bb.h + pad * 2);
       }
+      context.restore();
+    }
+
+    // Draw marquee rectangle during drag
+    if (marquee && (marquee.w > 0 || marquee.h > 0)) {
+      context.save();
+      const fillCol = isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
+      const strokeCol = isDarkMode ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)";
+      context.fillStyle = fillCol;
+      context.strokeStyle = strokeCol;
+      context.lineWidth = 1.2 / view.scale;
+      context.setLineDash([5 / view.scale, 3 / view.scale]);
+      context.fillRect(marquee.x, marquee.y, marquee.w, marquee.h);
+      context.strokeRect(marquee.x, marquee.y, marquee.w, marquee.h);
+      context.restore();
     }
 
     context.restore();
@@ -236,7 +250,7 @@ function Board() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
     };
-  }, [elements, view, selectedElementId, isDarkMode]);
+  }, [elements, view, selectedElementIds, isDarkMode, marquee]);
 
   useEffect(() => {
     const textarea = textAreaRef.current;
@@ -287,10 +301,17 @@ function Board() {
     if (isSelectTool) {
       const hit = findElementAt(elements, w.x, w.y);
       if (hit) {
-        selectElement(hit.id);
-        dragRef.current = { id: hit.id, lastX: w.x, lastY: w.y, moved: false };
+        // Clicking on an element: drag it. If it was not in the current
+        // selection, replace selection with just this element.
+        const alreadySelected = selectedElementIds.includes(hit.id);
+        const dragIds = alreadySelected ? selectedElementIds : [hit.id];
+        if (!alreadySelected) selectElements([hit.id]);
+        dragRef.current = { ids: dragIds, lastX: w.x, lastY: w.y, moved: false };
       } else {
-        selectElement(null);
+        // Clicking on empty space: clear selection and start a marquee
+        selectElements([]);
+        marqueeRef.current = { startX: w.x, startY: w.y };
+        setMarquee({ x: w.x, y: w.y, w: 0, h: 0 });
       }
       return;
     }
@@ -313,11 +334,22 @@ function Board() {
       const dx = w.x - dragRef.current.lastX;
       const dy = w.y - dragRef.current.lastY;
       if (dx !== 0 || dy !== 0) {
-        moveSelectedBy(dragRef.current.id, dx, dy);
+        moveSelectedBy(dragRef.current.ids, dx, dy);
         dragRef.current.lastX = w.x;
         dragRef.current.lastY = w.y;
         dragRef.current.moved = true;
       }
+      return;
+    }
+
+    if (marqueeRef.current) {
+      const { startX, startY } = marqueeRef.current;
+      setMarquee({
+        x: Math.min(startX, w.x),
+        y: Math.min(startY, w.y),
+        w: Math.abs(w.x - startX),
+        h: Math.abs(w.y - startY),
+      });
       return;
     }
 
@@ -339,6 +371,16 @@ function Board() {
     if (dragRef.current) {
       if (dragRef.current.moved) finishMove();
       dragRef.current = null;
+      return;
+    }
+    if (marqueeRef.current) {
+      const rect = marquee;
+      marqueeRef.current = null;
+      setMarquee(null);
+      if (rect && rect.w > 2 && rect.h > 2) {
+        const matches = findElementsInRect(elements, rect);
+        selectElements(matches.map((e) => e.id));
+      }
       return;
     }
     boardMouseUpHandler();
@@ -363,7 +405,7 @@ function Board() {
       : (spaceHeld || isPanTool)
         ? 'cursor-grab'
         : isSelectTool
-          ? (hoverElement ? 'cursor-move' : 'cursor-default')
+          ? (marqueeRef.current ? 'cursor-crosshair' : (hoverElement ? 'cursor-move' : 'cursor-default'))
           : activeToolItem === TOOL_ITEMS.TEXT
             ? 'cursor-text'
             : 'cursor-crosshair';
